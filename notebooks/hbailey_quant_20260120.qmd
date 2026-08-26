@@ -1,0 +1,549 @@
+---
+title: "Image analysis for Hannah Bailey - preliminary analysis"
+subtitle: ""
+author: "Dan Kelpsch"
+format:
+  html:
+    self-contained: true
+editor: visual
+---
+
+# Background
+
+Hannah has been working on various drug treatments and found that they alter lysosome and pRab10+ vesicles morphology and localization. She has been interested in trying to quantify this phenotype, but it has proven difficult. We have generated segmentation algorithms to generate masks of the cells in her images, lysosomes, and pRab10+ vesicles and extracted associated features and colocalization metrics. Here is the quantification of some of those features.
+
+# Load packages
+
+```{r}
+#| include: false
+#| label: Load necessary packages
+list.of.packages <- c("tidyverse")
+new.packages <- list.of.packages[!(list.of.packages %in% installed.packages()[,"Package"])]
+if(length(new.packages)) install.packages(new.packages)
+lapply(list.of.packages, library, character.only = TRUE)
+
+##round_any() is a function in the package plyr, but plyr has some 
+##compatibility issues with the tidyverse, thus just writing in the 
+##function manually
+round_any = function(x, accuracy, f=round){f(x/ accuracy) * accuracy}
+```
+
+# Load and process data
+
+```{r}
+#| label: Load data
+lysosomes <- read_csv("Hannah_RepresentativeImages/pipeline_outputs/lys_objects_all.csv")
+prab <- read_csv("Hannah_RepresentativeImages/pipeline_outputs/prab_objects_all.csv")
+coloc <- read_csv("Hannah_RepresentativeImages/pipeline_outputs/cells_coloc_all.csv")
+samplesheet <- read_csv("Hannah_RepresentativeImages/hb_samplesheet.csv")
+
+dir.create("./Output_graphs", showWarnings = FALSE)
+```
+
+## Align data with sample sheet
+
+```{r}
+#| label: Data processing
+lysosomes <- lysosomes %>% 
+  left_join(samplesheet)
+
+average_lysosomes <- lysosomes %>% 
+  group_by(cell_id, filename, Treatment) %>% 
+  summarize(mean_area = mean(area),
+            mean_fint = mean(mean_intensity))
+
+prab <- prab %>% 
+  left_join(samplesheet)
+
+average_prab <- prab %>% 
+  group_by(cell_id, filename, Treatment) %>% 
+  summarize(mean_area = mean(area),
+            mean_fint = mean(mean_intensity))
+
+coloc <- coloc %>%
+  left_join(samplesheet)
+```
+
+# Lysosome analysis
+
+## Count
+
+```{r}
+#| label: Lysosome count
+counts_per_image <- lysosomes %>%
+  group_by(Treatment, filename, cell_id) %>%
+  summarise(count = n(), .groups = "drop")
+
+y_lim <- counts_per_image %>% 
+  #filter(Outlier == "Normal") %>%
+  pull(count) %>% 
+  max(., na.rm = TRUE) %>% 
+  round_any(., 100, ceiling)
+
+ggplot(data = counts_per_image,
+       aes(x = Treatment,
+           y = count)) +
+  geom_violin(fill = "skyblue",
+              alpha = 0.7,
+              scale = "width") +
+  geom_boxplot(width = 0.5,
+               outlier.shape = NA,
+               alpha = 0.5) +
+  geom_jitter(width = 0.1, alpha = 0.5) +
+  theme_bw() +
+  scale_y_continuous(
+    labels = scales::comma, limits = c(0,y_lim), #c(lower limit, upper limit)
+    breaks = seq(0,y_lim,y_lim/6)) +  #seq(lower limit, upper limit, tick frequency)
+  labs(x = "Drug treatment",
+       y = "Lysosome count (per cell)") +
+  theme(
+    axis.text.x = element_text(face = 'bold', angle = 45, hjust = 1), 
+    axis.title.x = element_text(face = 'bold'),
+    axis.text.y = element_text(face = 'bold'), 
+    axis.title.y = element_text(face = 'bold'),
+    legend.title = element_text(face = 'bold'),
+    legend.text = element_text(face = 'bold'),
+    strip.text.x = element_text(face = 'bold')) 
+
+ggsave(filename = "lysosome_count.png",  width = 6, height = 4, path = "./Output_graphs/")
+```
+
+## Size
+
+```{r}
+#| label: Lysosome size
+y_lim <- lysosomes %>% 
+  #filter(Outlier == "Normal") %>%
+  pull(area) %>% 
+  max(., na.rm = TRUE) %>% 
+  round_any(., 100, ceiling)
+
+ggplot(data = lysosomes,
+       aes(x = Treatment,
+           y = area)) +
+  geom_violin(fill = "skyblue",
+              alpha = 0.7,
+              scale = "width") +
+  geom_boxplot(width = 0.5,
+               outlier.shape = NA,
+               alpha = 0.5) +
+  #geom_jitter(width = 0.2, alpha = 0.05) +
+  theme_bw() +
+  scale_y_continuous(
+    labels = scales::comma, limits = c(0,y_lim), #c(lower limit, upper limit)
+    breaks = seq(0,y_lim,y_lim/7)) +  #seq(lower limit, upper limit, tick frequency)
+  labs(x = "Drug treatment",
+       y = "Lysosome size (px)") +
+  theme(
+    axis.text.x = element_text(face = 'bold', angle = 45, hjust = 1), 
+    axis.title.x = element_text(face = 'bold'),
+    axis.text.y = element_text(face = 'bold'), 
+    axis.title.y = element_text(face = 'bold'),
+    legend.title = element_text(face = 'bold'),
+    legend.text = element_text(face = 'bold'),
+    strip.text.x = element_text(face = 'bold')) 
+
+ggsave(filename = "lysosome_size.png",  width = 6, height = 4, path = "./Output_graphs/")
+
+y_lim <- average_lysosomes %>% 
+  #filter(Outlier == "Normal") %>%
+  pull(mean_area) %>% 
+  max(., na.rm = TRUE) %>% 
+  round_any(., 10, ceiling)
+
+ggplot(data = average_lysosomes,
+       aes(x = Treatment,
+           y = mean_area)) +
+  geom_violin(fill = "skyblue",
+              alpha = 0.7,
+              scale = "width") +
+  geom_boxplot(width = 0.5,
+               outlier.shape = NA,
+               alpha = 0.5) +
+  geom_jitter(width = 0.1, alpha = 0.5) +
+  theme_bw() +
+  scale_y_continuous(
+    labels = scales::comma, limits = c(0,y_lim), #c(lower limit, upper limit)
+    breaks = seq(0,y_lim,y_lim/10)) +  #seq(lower limit, upper limit, tick frequency)
+  labs(x = "Drug treatment",
+       y = "Average lysosome size (per cell)") +
+  theme(
+    axis.text.x = element_text(face = 'bold', angle = 45, hjust = 1), 
+    axis.title.x = element_text(face = 'bold'),
+    axis.text.y = element_text(face = 'bold'), 
+    axis.title.y = element_text(face = 'bold'),
+    legend.title = element_text(face = 'bold'),
+    legend.text = element_text(face = 'bold'),
+    strip.text.x = element_text(face = 'bold')) 
+
+ggsave(filename = "lysosome_average_size.png",  width = 6, height = 4, path = "./Output_graphs/")
+```
+
+## Intensity
+
+```{r}
+#| label: Lysosome intensity
+y_lim <- lysosomes %>% 
+  #filter(Outlier == "Normal") %>%
+  pull(mean_intensity) %>% 
+  max(., na.rm = TRUE) %>% 
+  round_any(., 100, ceiling)
+
+ggplot(data = lysosomes,
+       aes(x = Treatment,
+           y = mean_intensity)) +
+  geom_violin(fill = "skyblue",
+              alpha = 0.7,
+              scale = "width") +
+  geom_boxplot(width = 0.5,
+               outlier.shape = NA,
+               alpha = 0.5) +
+  #geom_jitter(width = 0.2, alpha = 0.05) +
+  theme_bw() +
+  scale_y_continuous(
+    labels = scales::comma, limits = c(0,y_lim), #c(lower limit, upper limit)
+    breaks = seq(0,y_lim,y_lim/7)) +  #seq(lower limit, upper limit, tick frequency)
+  labs(x = "Drug treatment",
+       y = "Mean fluorescent intensity (per lysosome mask)") +
+  theme(
+    axis.text.x = element_text(face = 'bold', angle = 45, hjust = 1), 
+    axis.title.x = element_text(face = 'bold'),
+    axis.text.y = element_text(face = 'bold'), 
+    axis.title.y = element_text(face = 'bold'),
+    legend.title = element_text(face = 'bold'),
+    legend.text = element_text(face = 'bold'),
+    strip.text.x = element_text(face = 'bold')) 
+
+ggsave(filename = "lysosome_fintensity.png",  width = 6, height = 4, path = "./Output_graphs/")
+
+y_lim <- average_lysosomes %>% 
+  #filter(Outlier == "Normal") %>%
+  pull(mean_fint) %>% 
+  max(., na.rm = TRUE) %>% 
+  round_any(., 10, ceiling)
+
+ggplot(data = average_lysosomes,
+       aes(x = Treatment,
+           y = mean_fint)) +
+  geom_violin(fill = "skyblue",
+              alpha = 0.7,
+              scale = "width") +
+  geom_boxplot(width = 0.5,
+               outlier.shape = NA,
+               alpha = 0.5) +
+  geom_jitter(width = 0.1, alpha = 0.5) +
+  theme_bw() +
+  scale_y_continuous(
+    labels = scales::comma, limits = c(0,y_lim), #c(lower limit, upper limit)
+    breaks = seq(0,y_lim,y_lim/10)) +  #seq(lower limit, upper limit, tick frequency)
+  labs(x = "Drug treatment",
+       y = "Average lysosome size (per cell)") +
+  theme(
+    axis.text.x = element_text(face = 'bold', angle = 45, hjust = 1), 
+    axis.title.x = element_text(face = 'bold'),
+    axis.text.y = element_text(face = 'bold'), 
+    axis.title.y = element_text(face = 'bold'),
+    legend.title = element_text(face = 'bold'),
+    legend.text = element_text(face = 'bold'),
+    strip.text.x = element_text(face = 'bold')) 
+```
+
+# pRab10+ vesicle analysis
+
+## Count
+
+```{r}
+#| label: pRab10+ vesicle count
+counts_per_image <- prab %>%
+  group_by(Treatment, filename, cell_id) %>%
+  summarise(count = n(), .groups = "drop")
+
+y_lim <- counts_per_image %>% 
+  #filter(Outlier == "Normal") %>%
+  pull(count) %>% 
+  max(., na.rm = TRUE) %>% 
+  round_any(., 100, ceiling)
+
+ggplot(data = counts_per_image,
+       aes(x = Treatment,
+           y = count)) +
+  geom_violin(fill = "skyblue",
+              alpha = 0.7,
+              scale = "width") +
+  geom_boxplot(width = 0.5,
+               outlier.shape = NA,
+               alpha = 0.5) +
+  geom_jitter(width = 0.1, alpha = 0.5) +
+  theme_bw() +
+  scale_y_continuous(
+    labels = scales::comma, limits = c(0,y_lim), #c(lower limit, upper limit)
+    breaks = seq(0,y_lim,y_lim/10)) +  #seq(lower limit, upper limit, tick frequency)
+  labs(x = "Drug treatment",
+       y = "pRab+ object count (per cell)") +
+  theme(
+    axis.text.x = element_text(face = 'bold', angle = 45, hjust = 1), 
+    axis.title.x = element_text(face = 'bold'),
+    axis.text.y = element_text(face = 'bold'), 
+    axis.title.y = element_text(face = 'bold'),
+    legend.title = element_text(face = 'bold'),
+    legend.text = element_text(face = 'bold'),
+    strip.text.x = element_text(face = 'bold')) 
+
+ggsave(filename = "prab_count.png",  width = 6, height = 4, path = "./Output_graphs/")
+```
+
+## Size
+
+```{r}
+#| label: pRab10+ vesicle size
+y_lim <- prab %>% 
+  #filter(Outlier == "Normal") %>%
+  pull(area) %>% 
+  max(., na.rm = TRUE) %>% 
+  round_any(., 100, ceiling)
+
+ggplot(data = prab,
+       aes(x = Treatment,
+           y = area)) +
+  geom_violin(fill = "skyblue",
+              alpha = 0.7,
+              scale = "width") +
+  geom_boxplot(width = 0.5,
+               outlier.shape = NA,
+               alpha = 0.5) +
+  #geom_jitter(width = 0.2, alpha = 0.05) +
+  theme_bw() +
+  scale_y_continuous(
+    labels = scales::comma, limits = c(0,y_lim), #c(lower limit, upper limit)
+    breaks = seq(0,y_lim,y_lim/10)) +  #seq(lower limit, upper limit, tick frequency)
+  labs(x = "Drug treatment",
+       y = "pRab+ object size (px)") +
+  theme(
+    axis.text.x = element_text(face = 'bold', angle = 45, hjust = 1), 
+    axis.title.x = element_text(face = 'bold'),
+    axis.text.y = element_text(face = 'bold'), 
+    axis.title.y = element_text(face = 'bold'),
+    legend.title = element_text(face = 'bold'),
+    legend.text = element_text(face = 'bold'),
+    strip.text.x = element_text(face = 'bold')) 
+
+ggsave(filename = "prab_size.png",  width = 6, height = 4, path = "./Output_graphs/")
+
+y_lim <- average_prab %>% 
+  #filter(Outlier == "Normal") %>%
+  pull(mean_area) %>% 
+  max(., na.rm = TRUE) %>% 
+  round_any(., 10, ceiling)
+
+ggplot(data = average_prab,
+       aes(x = Treatment,
+           y = mean_area)) +
+  geom_violin(fill = "skyblue",
+              alpha = 0.7,
+              scale = "width") +
+  geom_boxplot(width = 0.5,
+               outlier.shape = NA,
+               alpha = 0.5) +
+  geom_jitter(width = 0.1, alpha = 0.5) +
+  theme_bw() +
+  scale_y_continuous(
+    labels = scales::comma, limits = c(0,y_lim), #c(lower limit, upper limit)
+    breaks = seq(0,y_lim,y_lim/10)) +  #seq(lower limit, upper limit, tick frequency)
+  labs(x = "Drug treatment",
+       y = "Average pRab+ object size (per cell)") +
+  theme(
+    axis.text.x = element_text(face = 'bold', angle = 45, hjust = 1), 
+    axis.title.x = element_text(face = 'bold'),
+    axis.text.y = element_text(face = 'bold'), 
+    axis.title.y = element_text(face = 'bold'),
+    legend.title = element_text(face = 'bold'),
+    legend.text = element_text(face = 'bold'),
+    strip.text.x = element_text(face = 'bold')) 
+
+ggsave(filename = "prab_average_size.png",  width = 6, height = 4, path = "./Output_graphs/")
+```
+
+## Intensity
+
+```{r}
+#| label: pRab10+ vesicle intensity
+y_lim <- prab %>% 
+  #filter(Outlier == "Normal") %>%
+  pull(mean_intensity) %>% 
+  max(., na.rm = TRUE) %>% 
+  round_any(., 500, ceiling)
+
+ggplot(data = prab,
+       aes(x = Treatment,
+           y = mean_intensity)) +
+  geom_violin(fill = "skyblue",
+              alpha = 0.7,
+              scale = "width") +
+  geom_boxplot(width = 0.5,
+               outlier.shape = NA,
+               alpha = 0.5) +
+  #geom_jitter(width = 0.2, alpha = 0.05) +
+  theme_bw() +
+  scale_y_continuous(
+    labels = scales::comma, limits = c(0,y_lim), #c(lower limit, upper limit)
+    breaks = seq(0,y_lim,y_lim/10)) +  #seq(lower limit, upper limit, tick frequency)
+  labs(x = "Drug treatment",
+       y = "Mean fluorescent intensity (per pRab+ object mask)") +
+  theme(
+    axis.text.x = element_text(face = 'bold', angle = 45, hjust = 1), 
+    axis.title.x = element_text(face = 'bold'),
+    axis.text.y = element_text(face = 'bold'), 
+    axis.title.y = element_text(face = 'bold'),
+    legend.title = element_text(face = 'bold'),
+    legend.text = element_text(face = 'bold'),
+    strip.text.x = element_text(face = 'bold')) 
+
+ggsave(filename = "prab_fintensity.png",  width = 6, height = 4, path = "./Output_graphs/")
+
+y_lim <- average_prab %>% 
+  #filter(Outlier == "Normal") %>%
+  pull(mean_fint) %>% 
+  max(., na.rm = TRUE) %>% 
+  round_any(., 10, ceiling)
+
+ggplot(data = average_prab,
+       aes(x = Treatment,
+           y = mean_fint)) +
+  geom_violin(fill = "skyblue",
+              alpha = 0.7,
+              scale = "width") +
+  geom_boxplot(width = 0.5,
+               outlier.shape = NA,
+               alpha = 0.5) +
+  geom_jitter(width = 0.1, alpha = 0.5) +
+  theme_bw() +
+  scale_y_continuous(
+    labels = scales::comma, limits = c(0,y_lim), #c(lower limit, upper limit)
+    breaks = seq(0,y_lim,y_lim/10)) +  #seq(lower limit, upper limit, tick frequency)
+  labs(x = "Drug treatment",
+       y = "Average pRab+ object fluorescent intensity (per cell)") +
+  theme(
+    axis.text.x = element_text(face = 'bold', angle = 45, hjust = 1), 
+    axis.title.x = element_text(face = 'bold'),
+    axis.text.y = element_text(face = 'bold'), 
+    axis.title.y = element_text(face = 'bold'),
+    legend.title = element_text(face = 'bold'),
+    legend.text = element_text(face = 'bold'),
+    strip.text.x = element_text(face = 'bold')) 
+
+ggsave(filename = "prab_average_fintensity.png",  width = 6, height = 4, path = "./Output_graphs/")
+```
+
+# Colocalization analysis
+
+## Pearson's
+
+```{r}
+#| label: Colocalization Pearson's R
+y_lim <- coloc %>% 
+  #filter(Outlier == "Normal") %>%
+  pull(pearson_r) %>% 
+  max(., na.rm = TRUE) %>% 
+  round_any(., 1, ceiling)
+
+ggplot(data = coloc,
+       aes(x = Treatment,
+           y = pearson_r)) +
+  geom_violin(fill = "skyblue",
+              alpha = 0.7,
+              scale = "width") +
+  geom_boxplot(width = 0.5,
+               outlier.shape = NA,
+               alpha = 0.5) +
+  geom_jitter(width = 0.1, alpha = 0.5) +
+  theme_bw() +
+  scale_y_continuous(
+    labels = scales::comma, limits = c(-0.1,y_lim), #c(lower limit, upper limit)
+    breaks = seq(0,y_lim,y_lim/10)) +  #seq(lower limit, upper limit, tick frequency)
+  labs(x = "Drug treatment",
+       y = "Colocalization (Pearson's R)") +
+  theme(
+    axis.text.x = element_text(face = 'bold', angle = 45, hjust = 1), 
+    axis.title.x = element_text(face = 'bold'),
+    axis.text.y = element_text(face = 'bold'), 
+    axis.title.y = element_text(face = 'bold'),
+    legend.title = element_text(face = 'bold'),
+    legend.text = element_text(face = 'bold'),
+    strip.text.x = element_text(face = 'bold')) 
+
+ggsave(filename = "coloc_pearsons.png",  width = 6, height = 4, path = "./Output_graphs/")
+```
+
+## Mander's
+
+```{r}
+#| label: Colocalization Mander's M1
+y_lim <- coloc %>% 
+  #filter(Outlier == "Normal") %>%
+  pull(manders_M1_lys_in_prab) %>% 
+  max(., na.rm = TRUE) %>% 
+  round_any(., 1, ceiling)
+
+ggplot(data = coloc,
+       aes(x = Treatment,
+           y = manders_M1_lys_in_prab)) +
+  geom_violin(fill = "skyblue",
+              alpha = 0.7,
+              scale = "width") +
+  geom_boxplot(width = 0.5,
+               outlier.shape = NA,
+               alpha = 0.5) +
+  geom_jitter(width = 0.1, alpha = 0.5) +
+  theme_bw() +
+  scale_y_continuous(
+    labels = scales::comma, limits = c(-0.1,y_lim), #c(lower limit, upper limit)
+    breaks = seq(0,y_lim,y_lim/10)) +  #seq(lower limit, upper limit, tick frequency)
+  labs(x = "Drug treatment",
+       y = "Colocalization (Manders (lys in prab))") +
+  theme(
+    axis.text.x = element_text(face = 'bold', angle = 45, hjust = 1), 
+    axis.title.x = element_text(face = 'bold'),
+    axis.text.y = element_text(face = 'bold'), 
+    axis.title.y = element_text(face = 'bold'),
+    legend.title = element_text(face = 'bold'),
+    legend.text = element_text(face = 'bold'),
+    strip.text.x = element_text(face = 'bold')) 
+
+ggsave(filename = "coloc_M1_lys_in_prab.png",  width = 6, height = 4, path = "./Output_graphs/")
+```
+
+```{r}
+#| label: Colocalization Mander's M2
+y_lim <- coloc %>% 
+  #filter(Outlier == "Normal") %>%
+  pull(manders_M2_prab_in_lys) %>% 
+  max(., na.rm = TRUE) %>% 
+  round_any(., 1, ceiling)
+
+ggplot(data = coloc,
+       aes(x = Treatment,
+           y = manders_M2_prab_in_lys)) +
+  geom_violin(fill = "skyblue",
+              alpha = 0.7,
+              scale = "width") +
+  geom_boxplot(width = 0.5,
+               outlier.shape = NA,
+               alpha = 0.5) +
+  geom_jitter(width = 0.1, alpha = 0.5) +
+  theme_bw() +
+  scale_y_continuous(
+    labels = scales::comma, limits = c(0,y_lim), #c(lower limit, upper limit)
+    breaks = seq(0,y_lim,y_lim/10)) +  #seq(lower limit, upper limit, tick frequency)
+  labs(x = "Drug treatment",
+       y = "Colocalization (Manders (prab in lys))") +
+  theme(
+    axis.text.x = element_text(face = 'bold', angle = 45, hjust = 1), 
+    axis.title.x = element_text(face = 'bold'),
+    axis.text.y = element_text(face = 'bold'), 
+    axis.title.y = element_text(face = 'bold'),
+    legend.title = element_text(face = 'bold'),
+    legend.text = element_text(face = 'bold'),
+    strip.text.x = element_text(face = 'bold')) 
+
+ggsave(filename = "coloc_M2_prab_in_lys.png",  width = 6, height = 4, path = "./Output_graphs/")
+```
