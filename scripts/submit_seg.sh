@@ -41,12 +41,12 @@ export CELLPOSE_LOCAL_MODELS_PATH="/data/kelpschdj/cellpose/models"
 #   source /data/kelpschdj/venvs/seg/bin/activate
 source /data/kelpschdj/conda/etc/profile.d/conda.sh
 conda activate baileyh
-export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"
 
 # --- Paths (read from env if exported by run_seg.sh, else these defaults) ---
-SAMPLES="${SAMPLES:-/data/CARDPB2/users/kelpschdj/baileyh/LRRK2KOmAC/20260717_LRRK2KOmAC_2_samplesheet.csv}"
-IMGDIR="${IMGDIR:-/data/CARDPB2/users/kelpschdj/baileyh/LRRK2KOmAC}"
-OUTDIR="${OUTDIR:-/data/kelpschdj/baileyh/out}"
+SAMPLES="${SAMPLES:-/data/Baileyhm_img/raw_data/LRRK2KOmAC/20260717_LRRK2KOmAC_2_samplesheet.csv}"
+IMGDIR="${IMGDIR:-/data/Baileyhm_img/raw_data/LRRK2KOmAC}"
+OUTDIR="${OUTDIR:-/data/Baileyhm_img/out/LRRK2KOmAC}"
 CHUNK="${CHUNK:-10}"
 
 echo "Host: $(hostname)  Task: ${SLURM_ARRAY_TASK_ID}"

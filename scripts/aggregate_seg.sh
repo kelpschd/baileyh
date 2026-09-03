@@ -21,12 +21,12 @@ export CELLPOSE_LOCAL_MODELS_PATH="/data/kelpschdj/cellpose/models"
 # --- Environment (match submit_seg.sh) ---
 source /data/kelpschdj/conda/etc/profile.d/conda.sh
 conda activate baileyh
-export LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$LD_LIBRARY_PATH
+export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"
 
 # --- Paths (must match submit_seg.sh) ---
-SAMPLES="/data/CARDPB2/users/kelpschdj/baileyh/20260507_siRNA/20260511_SampleSheet.csv"
-IMGDIR="/data/CARDPB2/users/kelpschdj/baileyh/20260507_siRNA"
-OUTDIR="/data/kelpschdj/baileyh/out"
+SAMPLES="/data/Baileyhm_img/raw_data/LRRK2KOmAC/20260717_LRRK2KOmAC_2_samplesheet.csv"
+IMGDIR="/data/Baileyhm_img/raw_data/LRRK2KOmAC"
+OUTDIR="/data/Baileyhm_img/out/LRRK2KOmAC"
 CHUNK=10
 
 python biowulf_runner.py aggregate \

@@ -13,9 +13,9 @@ set -euo pipefail
 mkdir -p logs
 
 # --- Paths (override by exporting before calling, e.g. OUTDIR=... ./run_seg.sh) ---
-SAMPLES="${SAMPLES:-/data/CARDPB2/users/kelpschdj/baileyh/20260507_siRNA/20260511_SampleSheet.csv}"
-IMGDIR="${IMGDIR:-/data/CARDPB2/users/kelpschdj/baileyh/20260507_siRNA}"
-OUTDIR="${OUTDIR:-/data/kelpschdj/baileyh/out}"
+SAMPLES="${SAMPLES:-/data/Baileyhm_img/raw_data/LRRK2KOmAC/20260717_LRRK2KOmAC_2_samplesheet.csv}"
+IMGDIR="${IMGDIR:-/data/Baileyhm_img/raw_data/LRRK2KOmAC}"
+OUTDIR="${OUTDIR:-/data/Baileyhm_img/out/LRRK2KOmAC}"
 CHUNK="${CHUNK:-10}"
 
 # --- Environment (needed for the `count` step, which runs here on the login node) ---
