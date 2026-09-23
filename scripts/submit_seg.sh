@@ -32,22 +32,15 @@ mkdir -p logs
 # --- Cellpose local model path (also set inside the Python entry point) ---
 export CELLPOSE_LOCAL_MODELS_PATH="/data/kelpschdj/cellpose/models"
 
-# --- Environment: pick ONE of these paradigms ---
-# (a) conda env
-#   source /data/kelpschdj/conda/etc/profile.d/conda.sh
-#   conda activate seg
-# (b) Biowulf module + venv
-#   module load python/3.11
-#   source /data/kelpschdj/venvs/seg/bin/activate
 source /data/kelpschdj/conda/etc/profile.d/conda.sh
 conda activate baileyh
 export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"
 
 # --- Paths (read from env if exported by run_seg.sh, else these defaults) ---
-SAMPLES="${SAMPLES:-/data/Baileyhm_img/raw_data/LRRK2KOmAC/20260717_LRRK2KOmAC_2_samplesheet.csv}"
-IMGDIR="${IMGDIR:-/data/Baileyhm_img/raw_data/LRRK2KOmAC}"
-OUTDIR="${OUTDIR:-/data/Baileyhm_img/out/LRRK2KOmAC}"
-CHUNK="${CHUNK:-10}"
+SAMPLES="${SAMPLES:-/data/Baileyhm_img/rawdata2/20260905_WT_LRRK2KO_mAC/20260905_WT_LRRK2KO_mAC_samplesheet.csv}"
+IMGDIR="${IMGDIR:-/data/Baileyhm_img/rawdata2/20260905_WT_LRRK2KO_mAC/}"
+OUTDIR="${OUTDIR:-/data/Baileyhm_img/out/20260905_WT_LRRK2KO_mAC}"
+CHUNK="${CHUNK:-40}"
 
 echo "Host: $(hostname)  Task: ${SLURM_ARRAY_TASK_ID}"
 nvidia-smi || true

@@ -13,10 +13,10 @@ set -euo pipefail
 mkdir -p logs
 
 # --- Paths (override by exporting before calling, e.g. OUTDIR=... ./run_seg.sh) ---
-SAMPLES="${SAMPLES:-/data/Baileyhm_img/raw_data/LRRK2KOmAC/20260717_LRRK2KOmAC_2_samplesheet.csv}"
-IMGDIR="${IMGDIR:-/data/Baileyhm_img/raw_data/LRRK2KOmAC}"
-OUTDIR="${OUTDIR:-/data/Baileyhm_img/out/LRRK2KOmAC}"
-CHUNK="${CHUNK:-10}"
+SAMPLES="${SAMPLES:-/data/Baileyhm_img/rawdata2/20260905_WT_LRRK2KO_mAC/20260905_WT_LRRK2KO_mAC_samplesheet.csv}"
+IMGDIR="${IMGDIR:-/data/Baileyhm_img/rawdata2/20260905_WT_LRRK2KO_mAC/}"
+OUTDIR="${OUTDIR:-/data/Baileyhm_img/out/20260905_WT_LRRK2KO_mAC}"
+CHUNK="${CHUNK:-40}"
 
 # --- Environment (needed for the `count` step, which runs here on the login node) ---
 source /data/kelpschdj/conda/etc/profile.d/conda.sh

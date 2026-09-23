@@ -24,10 +24,10 @@ conda activate baileyh
 export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:${LD_LIBRARY_PATH:-}"
 
 # --- Paths (must match submit_seg.sh) ---
-SAMPLES="/data/Baileyhm_img/raw_data/LRRK2KOmAC/20260717_LRRK2KOmAC_2_samplesheet.csv"
-IMGDIR="/data/Baileyhm_img/raw_data/LRRK2KOmAC"
-OUTDIR="/data/Baileyhm_img/out/LRRK2KOmAC"
-CHUNK=10
+SAMPLES="/data/Baileyhm_img/rawdata2/20260905_WT_LRRK2KO_mAC/20260905_WT_LRRK2KO_mAC_samplesheet.csv"
+IMGDIR="//data/Baileyhm_img/rawdata2/20260905_WT_LRRK2KO_mAC/"
+OUTDIR="/data/Baileyhm_img/out/20260905_WT_LRRK2KO_mAC"
+CHUNK=40
 
 python biowulf_runner.py aggregate \
   --samplesheet "$SAMPLES" \
